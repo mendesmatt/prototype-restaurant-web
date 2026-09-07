@@ -1,0 +1,722 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Pão &amp; Prosa · Comanda Digital</title>
+
+<script src="https://cdn.tailwindcss.com"></script>
+<script>
+  tailwind.config = {
+    theme: { extend: {
+      colors: { creme:'#FAFAF9', laranja:'#EA580C', laranjaDark:'#C2410C', cafe:'#431407', cafeSoft:'#7C2D12' },
+      fontFamily: { display:['Fraunces','Georgia','serif'], sans:['"Plus Jakarta Sans"','system-ui','sans-serif'] }
+    } }
+  }
+</script>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,500;9..144,600;9..144,700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600&display=swap" rel="stylesheet">
+
+<style>
+  * { -webkit-tap-highlight-color: transparent; box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  
+  body {
+    background: #e6ddd4;
+    font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
+    display: flex; align-items: center; justify-content: center;
+    min-height: 100vh;
+    overflow-y: auto;
+    padding: 40px 0;
+  }
+
+  /* Container rigorosamente travado em 375x750 */
+  .phone {
+    position: relative; 
+    width: 375px; 
+    height: 750px; 
+    background: #FAFAF9;
+    border-radius: 40px;
+    box-shadow: 0 20px 50px rgba(67,20,7,.15), 0 0 0 10px #2b2723;
+    overflow: hidden;
+    flex-shrink: 0;
+  }
+  
+  .notch { position:absolute; top:10px; left:50%; transform:translateX(-50%); width:130px; height:26px; background:#2b2723; border-radius:0 0 18px 18px; z-index:60; }
+  .statusbar { position:absolute; top:0; left:0; right:0; height:44px; z-index:50; display:flex; align-items:center; justify-content:space-between; padding:4px 22px 0; font-size:13px; font-weight:700; color:#fff; }
+
+  .screen { position:absolute; inset:0; display:none; flex-direction:column; }
+  .screen.active { display:flex; animation: fade .3s ease; }
+  @keyframes fade { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+  
+  .scroll { flex:1; overflow-y:auto; overflow-x:hidden; }
+  .no-bar::-webkit-scrollbar { display:none; }
+  .no-bar { scrollbar-width:none; }
+
+  .cat-pill { flex:0 0 auto; transition:all .2s ease; }
+  .cat-pill.on { background:#EA580C; color:#fff; box-shadow:0 6px 12px -4px rgba(234,88,12,.4); border-color:#EA580C !important; }
+
+  .prod { transition:transform .15s ease, box-shadow .15s ease; cursor:pointer; }
+  .prod:active { transform:scale(.97); }
+
+  .bottomnav { position:absolute; bottom:0; left:0; right:0; z-index:40; height:80px; background:rgba(255,255,255,.95); backdrop-filter:blur(10px); border-top:1px solid rgba(240,230,221,.8); display:flex; padding-bottom: 12px; }
+  .nav-btn { flex:1; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:4px; color:#a8a29e; font-size:11px; font-weight:700; background:none; border:none; transition: color .2s ease; }
+  .nav-btn.on { color:#EA580C; }
+  .nav-btn svg { transition: transform .2s ease; }
+  .nav-btn.on svg { transform: translateY(-2px); }
+  .badge { position:absolute; top:-4px; right:-8px; min-width:18px; height:18px; background:#EA580C; color:#fff; border-radius:999px; font-size:10px; font-weight:800; display:flex; align-items:center; justify-content:center; padding:0 4px; border:2px solid #fff; box-shadow: 0 2px 5px rgba(234,88,12,.4); }
+
+  .overlay { position:absolute; inset:0; z-index:70; background:rgba(28,25,23,.6); backdrop-filter: blur(3px); opacity:0; pointer-events:none; transition:opacity .3s ease; display:flex; flex-direction:column; justify-content:flex-end; }
+  .overlay.show { opacity:1; pointer-events:auto; }
+  .sheet { background:#FAFAF9; border-radius:32px 32px 0 0; max-height:88%; transform:translateY(100%); transition:transform .35s cubic-bezier(.22,1,.36,1); display:flex; flex-direction:column; overflow:hidden; box-shadow: 0 -10px 40px rgba(0,0,0,.2); }
+  .overlay.show .sheet { transform:translateY(0); }
+
+  .opt-row { transition:background .2s ease, border-color .2s ease; cursor:pointer; }
+  .opt-row:active { transform: scale(0.98); }
+
+  .scanline { animation:scan 1.4s linear infinite; }
+  @keyframes scan { 0%{top:8%} 50%{top:88%} 100%{top:8%} }
+
+  .toast { position:absolute; left:50%; bottom:100px; transform:translate(-50%,20px); z-index:90; background:#431407; color:#fff; font-size:13px; font-weight:600; padding:12px 22px; border-radius:999px; opacity:0; pointer-events:none; transition:all .3s cubic-bezier(.22,1,.36,1); box-shadow:0 12px 24px -8px rgba(67,20,7,.6); display:flex; align-items:center; gap:8px; white-space:nowrap; max-width:320px; }
+  .toast.show { opacity:1; transform:translate(-50%,0); }
+
+  .barcode { display:flex; align-items:flex-end; justify-content:center; gap:2px; height:60px; }
+  .barcode > i { display:block; background:#1c1917; height:100%; border-radius: 1px; }
+
+  @media (prefers-reduced-motion: reduce) { * { animation-duration:.001ms !important; transition-duration:.05ms !important; } }
+</style>
+</head>
+<body>
+
+  <div class="phone" id="phone">
+    <div class="notch"></div>
+
+    <!-- STATUS BAR -->
+    <div class="statusbar" id="status-bar">
+      <span id="clock">9:41</span>
+      <div style="display:flex; align-items:center; gap:6px;">
+        <svg width="17" height="12" viewBox="0 0 17 12" fill="currentColor"><rect x="0" y="7" width="3" height="5" rx="1"/><rect x="4.5" y="4.5" width="3" height="7.5" rx="1"/><rect x="9" y="2" width="3" height="10" rx="1"/><rect x="13.5" y="0" width="3" height="12" rx="1"/></svg>
+        <svg width="16" height="12" viewBox="0 0 16 12" fill="currentColor"><path d="M8 2.4c2 0 3.8.8 5.2 2l1-1.2C12.5 1.5 10.3.6 8 .6S3.5 1.5 1.8 3.2l1 1.2C4.2 3.2 6 2.4 8 2.4zm0 3.2c1.1 0 2.1.4 2.9 1.2l1-1.2C10.8 5.3 9.5 4.8 8 4.8s-2.8.5-3.9 1.6l1 1.2c.8-.8 1.8-1.2 2.9-1.2zM8 8.4c.6 0 1.1.2 1.5.7L8 11l-1.5-1.9c.4-.5.9-.7 1.5-.7z"/></svg>
+        <svg width="24" height="12" viewBox="0 0 24 12"><rect x="1" y="1" width="20" height="10" rx="3" fill="none" stroke="currentColor" stroke-width="1.2" opacity=".55"/><rect x="2.5" y="2.5" width="15" height="7" rx="1.5" fill="currentColor"/><rect x="22" y="4" width="1.6" height="4" rx="1" fill="currentColor" opacity=".55"/></svg>
+      </div>
+    </div>
+
+    <!-- ==================== CARDÁPIO (COLUNAS E BANNER) ==================== -->
+    <section class="screen active" id="screen-cardapio">
+      <div class="scroll no-bar" style="padding-bottom:96px;">
+        
+        <header style="background: linear-gradient(135deg, #f97316, #c2410c); padding: 48px 20px 24px; border-radius: 0 0 28px 28px; box-shadow: 0 4px 15px rgba(234,88,12,0.2);">
+          <div style="display:flex; justify-content:space-between; align-items:center; color:#fff;">
+            <div style="display:flex; align-items:center; gap:10px;">
+              <div style="width:40px; height:40px; border-radius:12px; background:#fff; display:flex; align-items:center; justify-content:center;">
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v18"/><path d="M8 6c-2-1-4 0-4 2.5S6 12 8 11"/><path d="M16 6c2-1 4 0 4 2.5S18 12 16 11"/><path d="M8 12c-2-1-4 0-4 2.5S6 18 8 17"/><path d="M16 12c2-1 4 0 4 2.5S18 18 16 17"/></svg>
+              </div>
+              <div>
+                <p style="font-size:11px; font-weight:600; opacity:0.9; letter-spacing:0.5px;">📍 Padaria Pão &amp; Prosa</p>
+                <p style="font-family:'Fraunces',serif; font-size:18px; font-weight:700; line-height:1.2;">Olá, <span id="greet-name">Mateus</span></p>
+              </div>
+            </div>
+            <button style="position:relative; width:38px; height:38px; border-radius:50%; background:rgba(255,255,255,0.2); display:flex; align-items:center; justify-content:center; border:none;">
+              <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+              <span style="position:absolute; top:8px; right:10px; width:8px; height:8px; background:#ef4444; border-radius:50%; border:2px solid #ea580c;"></span>
+            </button>
+          </div>
+
+          <div style="margin-top:20px; display:flex; align-items:center; gap:10px; background:#fff; border-radius:16px; padding:12px 16px; box-shadow: 0 4px 10px rgba(0,0,0,0.05);">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#a8a29e" stroke-width="2.5" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m21 21-4.3-4.3"/></svg>
+            <input id="search" type="text" placeholder="O que você procura hoje?" oninput="renderMenu()" style="border:none; outline:none; background:transparent; font-size:14px; font-weight:600; width:100%; color:#431407;">
+          </div>
+        </header>
+
+        <!-- Banner -->
+        <div style="padding: 0 20px; margin-top: 20px;">
+          <div style="position:relative; width:100%; height:160px; border-radius:24px; overflow:hidden; box-shadow: 0 8px 20px -8px rgba(67,20,7,0.3);">
+            <img src="https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&w=800&q=80" alt="Banner Pães" style="width:100%; height:100%; object-fit:cover;">
+            <div style="position:absolute; inset:0; background:linear-gradient(to top, rgba(67,20,7,0.85) 0%, transparent 80%);"></div>
+            <div style="position:absolute; bottom:16px; left:16px; right:16px;">
+              <span style="background:#EA580C; color:#fff; font-size:9.5px; font-weight:800; padding:4px 8px; border-radius:6px; text-transform:uppercase; letter-spacing:1px;">Novidade</span>
+              <h2 style="color:#fff; font-family:'Fraunces',serif; font-size:22px; font-weight:700; line-height:1.1; margin-top:6px;">Festival de Pães Artesanais</h2>
+              <p style="color:#f5d5b8; font-size:12px; margin-top:3px; font-weight:500;">Confira a seleção da semana</p>
+            </div>
+          </div>
+        </div>
+
+        <div id="cats" class="no-bar" style="display:flex; gap:10px; overflow-x:auto; padding:20px 20px 10px;"></div>
+        
+        <!-- Feed Duas Colunas -->
+        <div style="padding:10px 20px 20px;">
+          <div style="display:flex; justify-content:space-between; align-items:baseline; margin-bottom:14px;">
+            <h3 style="font-family:'Fraunces',serif; font-size:20px; font-weight:700; color:#431407;">Mais vendidos</h3>
+            <span style="font-size:12px; color:#EA580C; font-weight:700;">Ver todos ></span>
+          </div>
+          <div id="feed" style="display:grid; grid-template-columns: repeat(2, 1fr); gap: 14px;"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== COMANDA ==================== -->
+    <section class="screen" id="screen-comanda">
+      <div class="scroll no-bar" style="padding-top:52px; padding-bottom:96px;">
+
+        <!-- Estado 1: sem comanda -->
+        <div id="comanda-state1" style="padding:4px 20px;">
+          <h1 style="font-family:'Fraunces',serif; font-size:26px; font-weight:700; color:#431407;">Sua Comanda</h1>
+          <p style="font-size:14px; color:#a8a29e; font-weight:500; margin-top:4px;">Vincule a comanda recebida na entrada.</p>
+
+          <button onclick="startScan()" style="width:100%; margin-top:24px; background:linear-gradient(135deg,#EA580C,#C2410C); border:none; border-radius:24px; padding:28px 20px; color:#fff; display:flex; flex-direction:column; align-items:center; gap:16px; box-shadow:0 16px 32px -12px rgba(234,88,12,.6);">
+            <div style="width:68px; height:68px; border-radius:22px; background:rgba(255,255,255,.2); display:flex; align-items:center; justify-content:center; backdrop-filter: blur(4px);">
+              <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 14h3v3M20 14v7M14 20h3"/></svg>
+            </div>
+            <div style="text-align:center;">
+              <p style="font-weight:800; font-size:17px;">Ler QR Code da Comanda</p>
+              <p style="font-size:13px; opacity:.9; margin-top:4px; font-weight:500;">Aponte para o QR do cartão</p>
+            </div>
+          </button>
+
+          <div style="display:flex; align-items:center; gap:14px; margin:28px 0;">
+            <div style="flex:1; height:1px; background:#e6ddd4;"></div>
+            <span style="font-size:12px; font-weight:800; color:#a8a29e; letter-spacing:1.5px;">OU</span>
+            <div style="flex:1; height:1px; background:#e6ddd4;"></div>
+          </div>
+
+          <label style="font-size:13px; font-weight:800; color:#7C2D12; display:block; margin-bottom:10px;">Digitar o número da Comanda</label>
+          <div style="display:flex; align-items:center; gap:12px; background:#fff; border:2px solid #f0e6dd; border-radius:18px; padding:16px 18px;">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2.5"/><path d="M8 7h8M8 11h8M8 15h5"/></svg>
+            <input id="comanda-input" type="number" inputmode="numeric" placeholder="Ex: 4092" oninput="valComanda()" style="border:none; outline:none; background:transparent; font-size:17px; font-weight:800; width:100%; color:#431407; letter-spacing: 1px;">
+          </div>
+          <button id="btn-link" onclick="linkFromTab()" disabled style="margin-top:16px; width:100%; background:#e7ceb8; color:#fff; font-weight:800; font-size:16px; padding:18px; border:none; border-radius:18px; transition:all .2s ease;">Vincular comanda</button>
+        </div>
+
+        <!-- Estado 2: comanda vinculada -->
+        <div id="comanda-state2" style="display:none; padding:4px 20px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; background:#fff; padding: 16px 20px; border-radius: 20px; border: 1px solid #f0e6dd; box-shadow: 0 4px 15px -10px rgba(0,0,0,.1);">
+            <div>
+              <p style="font-size:11px; font-weight:800; color:#a8a29e; text-transform:uppercase; letter-spacing:1px;">Comanda ativa</p>
+              <p style="font-family:'Fraunces',serif; font-size:32px; font-weight:700; color:#431407; line-height:1; margin-top:4px;" id="comanda-num">#4092</p>
+            </div>
+            <span style="display:flex; align-items:center; gap:6px; background:#ecfdf5; color:#059669; font-size:12px; font-weight:800; padding:8px 14px; border-radius:999px;">
+              <span style="width:8px; height:8px; border-radius:50%; background:#059669;"></span> Aberta
+            </span>
+          </div>
+
+          <p style="font-size:13px; font-weight:800; color:#7C2D12; text-transform:uppercase; letter-spacing:1px; margin:24px 0 12px;">Itens pedidos</p>
+          <div id="comanda-list" style="display:flex; flex-direction:column; gap:12px;"></div>
+
+          <div id="comanda-empty" style="display:none; text-align:center; padding:30px 10px; color:#a8a29e;">
+            <div style="width:60px; height:60px; background:#f0e6dd; border-radius:50%; display:flex; align-items:center; justify-content:center; margin: 0 auto 12px;">
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="#a8a29e" stroke-width="2.5"><path d="M6 2L3 6v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/><path d="M16 10a4 4 0 0 1-8 0"/></svg>
+            </div>
+            <p style="font-size:14px; font-weight: 600;">Nenhum item ainda.</p>
+            <p style="font-size:13px; margin-top:4px;">Vá ao cardápio e faça seu pedido.</p>
+          </div>
+
+          <!-- Bloco de saída / pagamento -->
+          <div style="margin-top:24px; background:#fff; border-radius:24px; padding:24px; color:#431407; box-shadow: 0 12px 30px -10px rgba(67,20,7,.15); position: relative; overflow: hidden;">
+            <div style="position: absolute; top: 0; left: 0; right: 0; height: 6px; background: repeating-linear-gradient(90deg, #EA580C, #EA580C 10px, transparent 10px, transparent 20px);"></div>
+            
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 20px; padding-top: 8px;">
+              <span style="font-size:15px; color:#7C2D12; font-weight:700;">Subtotal gasto</span>
+              <span id="comanda-subtotal" style="font-family:'Fraunces',serif; font-size:26px; font-weight:800; color:#431407;">R$ 0,00</span>
+            </div>
+
+            <div style="height: 1px; background: dashed 2px #e6ddd4; margin: 20px 0;"></div>
+            
+            <p style="font-size:11px; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:#a8a29e; text-align:center;">Apresente no caixa para pagar</p>
+            <div style="background:#FAFAF9; border-radius:16px; padding:18px 14px; margin-top:12px; border: 1px solid #f0e6dd;">
+              <div class="barcode" id="barcode" style="justify-content:center;"></div>
+              <p style="font-family:'JetBrains Mono',monospace; font-size:14px; font-weight:700; color:#431407; letter-spacing:4px; margin-top:12px; text-align:center;" id="barcode-num">7890 4092 0012</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== PERFIL / CRM ==================== -->
+    <section class="screen" id="screen-perfil">
+      <div class="scroll no-bar" style="padding-top:52px; padding-bottom:96px;">
+        <div style="padding:4px 20px 0;">
+          <h1 style="font-family:'Fraunces',serif; font-size:26px; font-weight:700; color:#431407;">Clube Pão &amp; Prosa</h1>
+          <p style="font-size:14px; color:#a8a29e; font-weight:500; margin-top:4px;">Seus dados e recompensas exclusivas</p>
+        </div>
+
+        <div style="margin:20px 20px 0; background:linear-gradient(135deg,#EA580C,#9A3412); border-radius:24px; padding:24px; color:#fff; position:relative; overflow:hidden; box-shadow: 0 16px 32px -12px rgba(234,88,12,.6);">
+          <div style="position:absolute; right:-20px; top:-20px; opacity:.15; transform: rotate(15deg);">
+             <svg width="150" height="150" viewBox="0 0 24 24" fill="#fff"><path d="M12 2l2.9 6 6.6.5-5 4.3 1.6 6.4L12 16.1 5.9 19.2l1.6-6.4-5-4.3 6.6-.5z"/></svg>
+          </div>
+          
+          <div style="display:flex; align-items:center; justify-content:space-between; position:relative; z-index:10;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <div style="background: rgba(255,255,255,.2); padding:6px; border-radius: 10px;">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="#FFEDD5"><path d="M12 2l2.9 6 6.6.5-5 4.3 1.6 6.4L12 16.1 5.9 19.2l1.6-6.4-5-4.3 6.6-.5z"/></svg>
+              </div>
+              <span style="font-size:12px; font-weight:800; color:#FED7AA; text-transform:uppercase; letter-spacing:1px;">Membro Ouro</span>
+            </div>
+          </div>
+
+          <div style="margin-top: 24px; position:relative; z-index:10;">
+            <p style="font-size:14px; font-weight:600; color:#FED7AA; margin-bottom:4px;">Saldo de Pontos</p>
+            <p><span id="pts-big" style="font-family:'Fraunces',serif; font-size:46px; font-weight:700; line-height:1;">120</span> <span style="font-size:16px; font-weight:600; color:#fff;">pts</span></p>
+          </div>
+
+          <div style="margin-top:24px; position:relative; z-index:10;">
+            <div style="display:flex; justify-content:space-between; font-size:12px; color:#ffe9d3; font-weight:600; margin-bottom:8px;">
+              <span>Progresso</span>
+              <span id="pts-next">Faltam 80 pts</span>
+            </div>
+            <div style="height:10px; background:rgba(255,255,255,.25); border-radius:999px; overflow:hidden;">
+              <div id="pts-bar" style="height:100%; background:#fff; border-radius:999px; width:60%; transition: width 1s ease;"></div>
+            </div>
+          </div>
+          <button id="btn-redeem" onclick="redeem()" style="position:relative; z-index:10; width:100%; margin-top:24px; background:#fff; color:#EA580C; font-weight:800; font-size:15px; padding:16px; border:none; border-radius:16px; box-shadow: 0 4px 12px rgba(0,0,0,.1);">Resgatar Café Expresso (100 pts)</button>
+        </div>
+
+        <div style="margin:24px 20px 0;">
+          <p style="font-size:13px; font-weight:800; color:#7C2D12; text-transform:uppercase; letter-spacing:1px; margin-bottom:12px;">Meus Dados</p>
+          <div style="background:#fff; border:1px solid #f0e6dd; border-radius:24px; padding:20px; display:flex; flex-direction:column; gap:16px; box-shadow: 0 4px 15px -10px rgba(67,20,7,.1);">
+            <div>
+              <label style="font-size:12px; font-weight:700; color:#a8a29e;">Nome completo</label>
+              <input id="f-name" value="Mateus" oninput="syncName()" style="width:100%; margin-top:6px; border:none; border-bottom:2px solid #f0e6dd; padding:8px 0; font-size:16px; font-weight:700; color:#431407; outline:none; background:transparent; transition: border-color .2s ease;" onfocus="this.style.borderColor='#EA580C'" onblur="this.style.borderColor='#f0e6dd'">
+            </div>
+            <div>
+              <label style="font-size:12px; font-weight:700; color:#a8a29e;">WhatsApp</label>
+              <input id="f-whats" value="(11) 98765-4321" style="width:100%; margin-top:6px; border:none; border-bottom:2px solid #f0e6dd; padding:8px 0; font-size:16px; font-weight:700; color:#431407; outline:none; background:transparent; transition: border-color .2s ease;" onfocus="this.style.borderColor='#EA580C'" onblur="this.style.borderColor='#f0e6dd'">
+            </div>
+            <div>
+              <label style="font-size:12px; font-weight:700; color:#a8a29e;">CPF</label>
+              <input id="f-cpf" value="123.456.789-00" style="width:100%; margin-top:6px; border:none; border-bottom:2px solid #f0e6dd; padding:8px 0; font-size:16px; font-weight:700; color:#431407; outline:none; background:transparent; transition: border-color .2s ease;" onfocus="this.style.borderColor='#EA580C'" onblur="this.style.borderColor='#f0e6dd'">
+            </div>
+            <div>
+              <label style="font-size:12px; font-weight:700; color:#a8a29e;">E-mail</label>
+              <input id="f-email" value="mateus@email.com" style="width:100%; margin-top:6px; border:none; border-bottom:2px solid #f0e6dd; padding:8px 0; font-size:16px; font-weight:700; color:#431407; outline:none; background:transparent; transition: border-color .2s ease;" onfocus="this.style.borderColor='#EA580C'" onblur="this.style.borderColor='#f0e6dd'">
+            </div>
+            <button onclick="saveProfile()" style="margin-top:8px; width:100%; background:#EA580C; color:#fff; font-weight:800; font-size:15px; padding:16px; border:none; border-radius:16px; box-shadow: 0 4px 12px rgba(234,88,12,.3);">Salvar Atualizações</button>
+          </div>
+        </div>
+
+        <!-- Histórico -->
+        <div style="margin:24px 20px 0;">
+          <p style="font-size:13px; font-weight:800; color:#7C2D12; text-transform:uppercase; letter-spacing:1px; margin-bottom:12px;">Histórico de visitas</p>
+          <div style="display:flex; flex-direction:column; gap:12px;" id="history"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ==================== BOTTOM NAV ==================== -->
+    <nav class="bottomnav">
+      <button class="nav-btn on" id="tab-cardapio" onclick="switchTab('cardapio')">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1-5h16l1 5"/><path d="M4 9v10a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V9"/><path d="M3 9a2.5 2.5 0 0 0 5 0 2.5 2.5 0 0 0 4 0 2.5 2.5 0 0 0 4 0 2.5 2.5 0 0 0 5 0"/></svg>
+        Cardápio
+      </button>
+      <button class="nav-btn" id="tab-comanda" onclick="switchTab('comanda')">
+        <div style="position:relative;">
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h14v18l-2.5-1.6L14 21l-2-1.6L10 21l-2.5-1.6L5 21z"/><path d="M9 8h6M9 12h6"/></svg>
+          <span class="badge" id="nav-badge" style="display:none;">0</span>
+        </div>
+        Comanda
+      </button>
+      <button class="nav-btn" id="tab-perfil" onclick="switchTab('perfil')">
+        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="4"/><path d="M4 21c0-4 4-6 8-6s8 2 8 6"/></svg>
+        Perfil
+      </button>
+    </nav>
+
+    <!-- ==================== MODAL PRODUTO ==================== -->
+    <div class="overlay" id="overlay-prod" onclick="if(event.target===this) closeProd()">
+      <div class="sheet" style="height:88%;">
+        <div style="position:relative; flex:0 0 auto;">
+          <img id="m-img" src="" alt="" style="width:100%; height:220px; object-fit:cover;">
+          <div style="position:absolute; inset:0; background:linear-gradient(to top, rgba(250,250,249,1), rgba(250,250,249,0) 50%);"></div>
+          <button onclick="closeProd()" style="position:absolute; top:16px; right:16px; width:40px; height:40px; border-radius:50%; background:rgba(255,255,255,.95); border:none; display:flex; align-items:center; justify-content:center; box-shadow: 0 4px 10px rgba(0,0,0,.15); transition: transform .15s ease;" onmousedown="this.style.transform='scale(0.95)'" onmouseup="this.style.transform='scale(1)'">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#431407" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+          </button>
+        </div>
+        <div class="scroll no-bar" style="padding:0 24px 16px;">
+          <p id="m-cat" style="font-size:12px; font-weight:800; letter-spacing:1px; text-transform:uppercase; color:#EA580C;"></p>
+          <h2 id="m-name" style="font-family:'Fraunces',serif; font-size:26px; font-weight:700; color:#431407; line-height:1.15; margin-top:6px;"></h2>
+          <p id="m-desc" style="font-size:14px; color:#78716c; margin-top:10px; line-height:1.5; font-weight: 500;"></p>
+          <div style="margin:20px 0 10px; height:1px; background:#f0e6dd;"></div>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px;">
+            <p style="font-family:'Fraunces',serif; font-weight:700; font-size:18px; color:#431407;">Personalize</p>
+          </div>
+          <div id="m-options" style="display:flex; flex-direction:column; gap:22px;"></div>
+        </div>
+        <div style="flex:0 0 auto; border-top:1px solid #f0e6dd; background:#fff; padding:16px 24px 24px; display:flex; align-items:center; gap:16px; box-shadow: 0 -4px 15px rgba(0,0,0,.03);">
+          <div style="display:flex; align-items:center; gap:4px; background:#FAFAF9; border:2px solid #f0e6dd; border-radius:16px; padding:6px;">
+            <button onclick="modalQty(-1)" style="width:38px; height:38px; border-radius:12px; border:none; background:#fff; display:flex; align-items:center; justify-content:center; box-shadow: 0 2px 4px rgba(0,0,0,.05);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#7C2D12" stroke-width="2.6" stroke-linecap="round"><path d="M5 12h14"/></svg></button>
+            <span id="m-qty" style="width:30px; text-align:center; font-weight:800; font-size:18px; color:#431407;">1</span>
+            <button onclick="modalQty(1)" style="width:38px; height:38px; border-radius:12px; border:none; background:#fff; display:flex; align-items:center; justify-content:center; box-shadow: 0 2px 4px rgba(0,0,0,.05);"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EA580C" stroke-width="2.6" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+          </div>
+          <button onclick="requestAdd()" style="flex:1; background:#EA580C; color:#fff; font-weight:800; font-size:16px; padding:18px; border:none; border-radius:18px; display:flex; align-items:center; justify-content:center; gap:10px; box-shadow: 0 6px 16px -6px rgba(234,88,12,.6); transition: transform .15s ease;" onmousedown="this.style.transform='scale(0.98)'" onmouseup="this.style.transform='scale(1)'">
+            <span>Adicionar</span><span id="m-total" style="font-weight:800;">R$ 0,00</span>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== MODAL VINCULAR COMANDA ==================== -->
+    <div class="overlay" id="overlay-link" onclick="if(event.target===this) closeLink()">
+      <div class="sheet" style="max-height:75%;">
+        <div style="padding:26px 24px 12px; display:flex; align-items:flex-start; justify-content:space-between;">
+          <div>
+            <h2 style="font-family:'Fraunces',serif; font-size:24px; font-weight:700; color:#431407;">Vincule sua comanda</h2>
+            <p style="font-size:14px; color:#a8a29e; font-weight:500; margin-top:6px;">Para pedir, vincule seu cartão da mesa.</p>
+          </div>
+          <button onclick="closeLink()" style="width:38px; height:38px; border-radius:50%; background:#FAFAF9; border:2px solid #f0e6dd; display:flex; align-items:center; justify-content:center;"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#431407" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></button>
+        </div>
+        <div class="scroll no-bar" style="padding:12px 24px 30px;">
+          <button onclick="startScan('link')" style="width:100%; background:linear-gradient(135deg,#EA580C,#C2410C); border:none; border-radius:24px; padding:24px; color:#fff; display:flex; align-items:center; gap:16px; box-shadow:0 12px 24px -10px rgba(234,88,12,.7);">
+            <div style="width:60px; height:60px; border-radius:18px; background:rgba(255,255,255,.2); display:flex; align-items:center; justify-content:center; flex:0 0 auto; backdrop-filter: blur(4px);"><svg width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/><rect x="3" y="14" width="7" height="7" rx="1.5"/><path d="M14 14h3v3M20 14v7M14 20h3"/></svg></div>
+            <div style="text-align:left;"><p style="font-weight:800; font-size:16px;">Ler QR Code da Comanda</p><p style="font-size:13px; opacity:.9; font-weight:500; margin-top:2px;">Aponte a câmera</p></div>
+          </button>
+          <div style="display:flex; align-items:center; gap:14px; margin:24px 0;">
+            <div style="flex:1; height:1px; background:#f0e6dd;"></div><span style="font-size:12px; font-weight:800; color:#a8a29e; letter-spacing: 1px;">OU</span><div style="flex:1; height:1px; background:#f0e6dd;"></div>
+          </div>
+          <label style="font-size:14px; font-weight:800; color:#7C2D12; display:block; margin-bottom:10px;">Digitar o número da comanda</label>
+          <div style="display:flex; align-items:center; gap:12px; background:#fff; border:2px solid #f0e6dd; border-radius:18px; padding:16px 18px; transition: border-color .2s ease;" onfocusin="this.style.borderColor='#EA580C'" onfocusout="this.style.borderColor='#f0e6dd'">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="3" width="16" height="18" rx="2.5"/><path d="M8 7h8M8 11h8M8 15h5"/></svg>
+            <input id="link-input" type="number" inputmode="numeric" placeholder="Ex: 4092" oninput="valLink()" style="border:none; outline:none; background:transparent; font-size:17px; font-weight:800; width:100%; color:#431407; letter-spacing: 1px;">
+          </div>
+          <button id="btn-link2" onclick="linkFromOverlay()" disabled style="margin-top:20px; width:100%; background:#e7ceb8; color:#fff; font-weight:800; font-size:16px; padding:18px; border:none; border-radius:18px; transition:all .2s ease; box-shadow: 0 4px 10px rgba(0,0,0,.05);">Vincular e adicionar item</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- ==================== SCANNER ANIMATION ==================== -->
+    <div class="overlay" id="overlay-scan" style="justify-content:center; align-items:center; background:rgba(28,25,23,.9);">
+      <div style="width:260px; text-align:center;">
+        <div style="position:relative; width:220px; height:220px; margin:0 auto; border-radius:28px; overflow:hidden; background:rgba(255,255,255,.05);">
+          <span style="position:absolute; top:12px; left:12px; width:32px; height:32px; border-top:4px solid #EA580C; border-left:4px solid #EA580C; border-radius:10px 0 0 0;"></span>
+          <span style="position:absolute; top:12px; right:12px; width:32px; height:32px; border-top:4px solid #EA580C; border-right:4px solid #EA580C; border-radius:0 10px 0 0;"></span>
+          <span style="position:absolute; bottom:12px; left:12px; width:32px; height:32px; border-bottom:4px solid #EA580C; border-left:4px solid #EA580C; border-radius:0 0 0 10px;"></span>
+          <span style="position:absolute; bottom:12px; right:12px; width:32px; height:32px; border-bottom:4px solid #EA580C; border-right:4px solid #EA580C; border-radius:0 0 10px 0;"></span>
+          <div class="scanline" style="position:absolute; left:16px; right:16px; height:3px; background:#EA580C; box-shadow:0 0 16px 3px rgba(234,88,12,.9); border-radius: 2px;"></div>
+        </div>
+        <p style="color:#fff; font-weight:700; font-size:15px; margin-top:24px;">Lendo QR Code...</p>
+      </div>
+    </div>
+
+    <!-- TOAST ALERT -->
+    <div class="toast" id="toast">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#4ade80" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>
+      <span id="toast-msg">Adicionado</span>
+    </div>
+
+  </div>
+
+<script>
+/* ================== DADOS ================== */
+const CATS = [
+  { id:'paes',        label:'Pães',        ico:'<path d="M12 3v18"/><path d="M8 6c-2-1-4 0-4 2.5S6 12 8 11"/><path d="M16 6c2-1 4 0 4 2.5S18 12 16 11"/><path d="M8 12c-2-1-4 0-4 2.5S6 18 8 17"/><path d="M16 12c2-1 4 0 4 2.5S18 18 16 17"/>' },
+  { id:'lanches',     label:'Lanches',     ico:'<path d="M4 11h16"/><path d="M4 11a8 8 0 0 1 16 0"/><path d="M4 15h16"/><path d="M6 19h12a2 2 0 0 0 2-2H4a2 2 0 0 0 2 2Z"/>' },
+  { id:'bebidas',     label:'Bebidas',     ico:'<path d="M8 3h8l-1 6H9L8 3Z"/><path d="M9 9l-1 11a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1L15 9"/>' },
+  { id:'confeitaria', label:'Doces',       ico:'<path d="M6 11h12l-1 8a2 2 0 0 1-2 1.5H9A2 2 0 0 1 7 19Z"/><path d="M6 11a3 3 0 0 1 6 0 3 3 0 0 1 6 0"/><path d="M12 5v3"/>' },
+];
+
+const PRODUCTS = [
+  { id:'pao-chapa', cat:'paes', name:'Pão na Chapa', price:8.50, desc:'Pão francês aberto na chapa com requeijão cremoso.', img:'pao-na-chapa.png',
+    options:[ {title:'Ponto do pão', type:'radio', req:true, items:[{l:'Bem tostado'},{l:'Levemente tostado'}]}, {title:'Turbine seu pão', type:'checkbox', items:[{l:'Requeijão extra',p:2.00},{l:'Fatia de queijo',p:3.00},{l:'Ovo mexido',p:2.50}]} ] },
+  { id:'baguete', cat:'paes', name:'Baguete Artesanal', price:12.00, desc:'Casca crocante, assada em forno de pedra.', img:'https://images.unsplash.com/photo-1608198093002-ad4e005484ec?auto=format&fit=crop&w=500&q=70',
+    options:[ {title:'Como prefere?', type:'radio', req:true, items:[{l:'Inteira'},{l:'Fatiada'}]}, {title:'Acompanhamentos', type:'checkbox', items:[{l:'Manteiga da casa',p:1.50},{l:'Geleia artesanal',p:3.00}]} ] },
+  
+  { id:'misto', cat:'lanches', name:'Misto na Baguete', price:16.90, desc:'Presunto e queijo derretidos na baguete prensada.', img:'https://images.unsplash.com/photo-1528735602780-2552fd46c7af?auto=format&fit=crop&w=500&q=70',
+    options:[ {title:'Ponto do queijo', type:'radio', req:true, items:[{l:'Bem derretido'},{l:'No ponto'}]}, {title:'Adicionais', type:'checkbox', items:[{l:'Bacon crocante',p:4.00},{l:'Ovo',p:2.50},{l:'Tomate e orégano',p:1.50}]} ] },
+  { id:'xburguer', cat:'lanches', name:'X-Burguer Artesanal', price:22.00, desc:'Blend 160g, queijo prato e pão brioche na chapa.', img:'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&w=500&q=70',
+    options:[ {title:'Ponto da carne', type:'radio', req:true, items:[{l:'Ao ponto'},{l:'Bem passada'}]}, {title:'Monte do seu jeito', type:'checkbox', items:[{l:'Carne extra 160g',p:9.00},{l:'Cheddar',p:3.00},{l:'Cebola',p:2.50}]} ] },
+
+  { id:'suco', cat:'bebidas', name:'Suco de Laranja', price:11.00, desc:'Laranjas espremidas na hora, 400ml natural.', img:'https://images.unsplash.com/photo-1600271886742-f049cd451bba?auto=format&fit=crop&w=500&q=70',
+    options:[ {title:'Gelo', type:'radio', req:true, items:[{l:'Com Gelo'},{l:'Sem Gelo'}]}, {title:'Finalização', type:'checkbox', items:[{l:'Rodela de Limão'},{l:'Rodela de Laranja'},{l:'Adoçante'},{l:'Açúcar'}]} ] },
+  { id:'expresso', cat:'bebidas', name:'Café Expresso', price:6.50, desc:'Grãos torrados na casa, extração curta.', img:'https://images.unsplash.com/photo-1510707577719-ae7c14805e3a?auto=format&fit=crop&w=500&q=70',
+    options:[ {title:'Intensidade', type:'radio', req:true, items:[{l:'Curto (forte)'},{l:'Longo'}]}, {title:'Adoçar', type:'checkbox', items:[{l:'Açúcar'},{l:'Adoçante'},{l:'Dose extra',p:3.00}]} ] },
+  { id:'refri', cat:'bebidas', name:'Refrigerante Lata', price:7.00, desc:'Lata 350ml bem gelada.', img:'https://images.unsplash.com/photo-1622483767028-3f66f32aef97?auto=format&fit=crop&w=500&q=70',
+    options:[ {title:'Gelo', type:'radio', req:true, items:[{l:'Com Gelo'},{l:'Sem Gelo'}]}, {title:'Acompanhamentos', type:'checkbox', items:[{l:'Rodela de Limão'},{l:'Rodela de Laranja'},{l:'Copo com gelo'}]} ] },
+
+  { id:'sonho', cat:'confeitaria', name:'Sonho de Creme', price:9.50, desc:'Massa fofinha com recheio generoso de creme.', img:'https://images.unsplash.com/photo-1587241321921-91a834d6d191?auto=format&fit=crop&w=500&q=70',
+    options:[ {title:'Recheio', type:'radio', req:true, items:[{l:'Creme baunilha'},{l:'Doce de leite',p:1.00}]}, {title:'Finalização', type:'checkbox', items:[{l:'Cobertura chocolate',p:2.50}]} ] },
+  { id:'bolo-cenoura', cat:'confeitaria', name:'Bolo de Cenoura', price:10.90, desc:'Fatia caseira com cobertura cremosa de chocolate.', img:'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&w=500&q=70',
+    options:[ {title:'Temperatura', type:'radio', req:true, items:[{l:'Aquecido'},{l:'Natural'}]}, {title:'Acompanha', type:'checkbox', items:[{l:'Calda extra',p:2.00},{l:'Sorvete',p:5.00}]} ] },
+];
+
+/* ================== ESTADO ================== */
+let customer = { name:'Mateus', whatsapp:'(11) 98765-4321', cpf:'123.456.789-00', email:'mateus@email.com', points:120 };
+let comanda = null;                
+let modal = null;
+let pendingItem = null;
+let activeCat = 'paes';
+
+/* ================== HELPERS ================== */
+const brl = v => 'R$ ' + v.toFixed(2).replace('.', ',');
+const catLabel = id => (CATS.find(c=>c.id===id)||{}).label || '';
+const firstName = () => (customer.name||'').trim().split(' ')[0] || 'Cliente';
+
+function imgFallback(el){
+  el.onerror = null;
+  el.style.display = 'none'; // Esconde a imagem quebrada e deixa o fundo creme aparecer
+}
+
+function toast(msg){
+  const t = document.getElementById('toast');
+  document.getElementById('toast-msg').textContent = msg;
+  t.classList.add('show');
+  clearTimeout(t._t); t._t = setTimeout(()=>t.classList.remove('show'), 2000);
+}
+
+/* ================== CARDÁPIO (2 COLUNAS) ================== */
+function renderCats(){
+  document.getElementById('cats').innerHTML = CATS.map(c => `
+    <button onclick="setCat('${c.id}')" class="cat-pill ${c.id===activeCat?'on':''}"
+      style="display:flex; align-items:center; gap:8px; background:#fff; border:1px solid #f0e6dd; color:#7C2D12; font-weight:700; font-size:13px; padding:10px 18px; border-radius:16px;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="color:${c.id===activeCat?'#fff':'#EA580C'}">${c.ico}</svg>
+      ${c.label}
+    </button>`).join('');
+}
+function setCat(id){ activeCat=id; renderCats(); renderMenu(); }
+
+function renderMenu(){
+  const q = (document.getElementById('search').value||'').toLowerCase().trim();
+  let list = PRODUCTS.filter(p => p.cat===activeCat);
+  if(q) list = PRODUCTS.filter(p => (p.name+p.desc).toLowerCase().includes(q));
+  const feed = document.getElementById('feed');
+  
+  if(!list.length){
+    feed.innerHTML = `<div style="grid-column: span 2; text-align:center; padding:40px 10px; color:#a8a29e;"><p style="font-family:'Fraunces',serif; font-size:18px; font-weight:700; color:#431407;">Nada encontrado</p><p style="font-size:13px; margin-top:4px;">Tente outra busca ou categoria.</p></div>`;
+    return;
+  }
+
+  feed.innerHTML = list.map(p => `
+    <div class="prod" onclick="openProd('${p.id}')" style="background:#fff; border:1px solid #f4ece4; border-radius:18px; padding:10px; display:flex; flex-direction:column; box-shadow:0 6px 12px -6px rgba(67,20,7,.1); position:relative;">
+        <div style="width:100%; aspect-ratio:1; border-radius:12px; overflow:hidden; background:#f5e6d3; position:relative; margin-bottom:12px;">
+            <img src="${p.img}" alt="${p.name}" style="width:100%; height:100%; object-fit:cover;" onerror="imgFallback(this)">
+            <div style="position:absolute; top:8px; left:8px; width:28px; height:28px; background:rgba(255,255,255,0.9); border-radius:50%; display:flex; align-items:center; justify-content:center; backdrop-filter: blur(2px);">
+                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#a8a29e" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/></svg>
+            </div>
+            <button onclick="event.stopPropagation(); openProd('${p.id}')" style="position:absolute; bottom:8px; right:8px; width:30px; height:30px; background:#fff; border-radius:50%; border:none; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,0.15);">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#EA580C" stroke-width="2.5" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+            </button>
+        </div>
+        <p style="font-family:'Fraunces',serif; font-weight:700; font-size:13.5px; color:#431407; line-height:1.2; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${p.name}</p>
+        <p style="font-size:11px; color:#a8a29e; margin-top:4px;">${catLabel(p.cat)}</p>
+        <div style="margin-top:auto; padding-top:8px;">
+            <span style="font-family:'Fraunces',serif; font-weight:800; font-size:16px; color:#EA580C;">${brl(p.price)}</span>
+        </div>
+    </div>`).join('');
+}
+
+/* ================== MODAL PRODUTO ================== */
+function openProd(id){
+  const p = PRODUCTS.find(x=>x.id===id);
+  modal = { product:p, qty:1, radios:{}, checks:new Set() };
+  p.options.forEach((g,gi)=>{ if(g.type==='radio' && g.req) modal.radios[gi]=0; });
+  
+  const mImg = document.getElementById('m-img');
+  mImg.style.display = 'block';
+  mImg.src = p.img;
+  mImg.onerror = () => imgFallback(mImg);
+  
+  document.getElementById('m-cat').textContent = catLabel(p.cat);
+  document.getElementById('m-name').textContent = p.name;
+  document.getElementById('m-desc').textContent = p.desc;
+  document.getElementById('m-qty').textContent = '1';
+  
+  renderOptions(); computeModal();
+  document.getElementById('overlay-prod').classList.add('show');
+}
+function closeProd(){ document.getElementById('overlay-prod').classList.remove('show'); }
+
+function renderOptions(){
+  const p = modal.product;
+  document.getElementById('m-options').innerHTML = p.options.map((g,gi)=>{
+    const rows = g.items.map((it,ii)=>{
+      const sel = g.type==='radio' ? modal.radios[gi]===ii : modal.checks.has(gi+'-'+ii);
+      const ctrl = g.type==='radio'
+        ? `<span style="width:24px; height:24px; border-radius:50%; border:2px solid ${sel?'#EA580C':'#d6ccc2'}; display:flex; align-items:center; justify-content:center; transition: all .2s;">${sel?'<span style="width:12px;height:12px;border-radius:50%;background:#EA580C;"></span>':''}</span>`
+        : `<span style="width:24px; height:24px; border-radius:8px; border:2px solid ${sel?'#EA580C':'#d6ccc2'}; background:${sel?'#EA580C':'transparent'}; display:flex; align-items:center; justify-content:center; transition: all .2s;">${sel?'<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>':''}</span>`;
+      const price = it.p ? `<span style="font-size:13.5px; font-weight:800; color:#EA580C;">+ ${brl(it.p)}</span>` : `<span style="font-size:12px; color:#c4bcb2; font-weight:700;">grátis</span>`;
+      return `<div class="opt-row" onclick="toggleOpt(${gi},${ii})" style="display:flex; align-items:center; gap:14px; padding:14px 16px; border:2px solid ${sel?'#EA580C':'#f0e6dd'}; border-radius:16px; background:${sel?'#FFF7ED':'#fff'}; cursor:pointer;">${ctrl}<span style="flex:1; font-size:15px; font-weight:700; color:#431407;">${it.l}</span>${price}</div>`;
+    }).join('');
+    return `<div><div style="display:flex; align-items:center; gap:10px; margin-bottom:12px;"><p style="font-weight:800; font-size:15px; color:#431407;">${g.title}</p>${g.req?'<span style="font-size:10px;font-weight:800;color:#EA580C;background:#FFF7ED;padding:4px 10px;border-radius:999px;">OBRIGATÓRIO</span>':'<span style="font-size:11px;font-weight:700;color:#a8a29e;">Opcional</span>'}</div><div style="display:flex; flex-direction:column; gap:10px;">${rows}</div></div>`;
+  }).join('');
+}
+function toggleOpt(gi,ii){
+  const g = modal.product.options[gi];
+  if(g.type==='radio') modal.radios[gi]=ii;
+  else { const k=gi+'-'+ii; modal.checks.has(k)?modal.checks.delete(k):modal.checks.add(k); }
+  renderOptions(); computeModal();
+}
+function modalQty(d){ modal.qty=Math.max(1,modal.qty+d); document.getElementById('m-qty').textContent=modal.qty; computeModal(); }
+function modalUnitPrice(){
+  const p=modal.product; let u=p.price;
+  Object.entries(modal.radios).forEach(([gi,ii])=>u+=(p.options[gi].items[ii].p||0));
+  modal.checks.forEach(k=>{ const [gi,ii]=k.split('-').map(Number); u+=(p.options[gi].items[ii].p||0); });
+  return u;
+}
+function computeModal(){ document.getElementById('m-total').textContent = brl(modalUnitPrice()*modal.qty); }
+function selectedLabels(){
+  const p=modal.product; const labs=[];
+  p.options.forEach((g,gi)=>{ if(g.type==='radio'){ const ii=modal.radios[gi]; if(ii!=null) labs.push(g.items[ii].l); } });
+  modal.checks.forEach(k=>{ const [gi,ii]=k.split('-').map(Number); labs.push(p.options[gi].items[ii].l); });
+  return labs;
+}
+
+/* ================== FLUXO ADICIONAR ================== */
+function requestAdd(){
+  pendingItem = {
+    uid: Date.now()+'-'+Math.random().toString(36).slice(2,6),
+    id: modal.product.id, name: modal.product.name,
+    unit: modalUnitPrice(), qty: modal.qty, opts: selectedLabels(), img: modal.product.img
+  };
+  closeProd();
+  if(comanda){ commitPending(); }
+  else { openLink(); }
+}
+function commitPending(){
+  if(!pendingItem) return;
+  comanda.items.push(pendingItem);
+  const q = pendingItem.qty; const nm = pendingItem.name;
+  pendingItem = null;
+  updateBadge(); renderComanda();
+  toast(q + '× ' + nm.split(' ').slice(0,2).join(' ') + ' na comanda');
+}
+
+/* ================== VINCULAR COMANDA ================== */
+function openLink(){ document.getElementById('link-input').value=''; valLink(); document.getElementById('overlay-link').classList.add('show'); }
+function closeLink(){ document.getElementById('overlay-link').classList.remove('show'); }
+function valLink(){ const v=parseInt(document.getElementById('link-input').value,10); const b=document.getElementById('btn-link2'); const ok=v>0; b.disabled=!ok; b.style.background=ok?'#EA580C':'#e7ceb8'; }
+function linkFromOverlay(){ const v=parseInt(document.getElementById('link-input').value,10); if(v>0) linkComanda(String(v)); }
+
+function valComanda(){ const v=parseInt(document.getElementById('comanda-input').value,10); const b=document.getElementById('btn-link'); const ok=v>0; b.disabled=!ok; b.style.background=ok?'#EA580C':'#e7ceb8'; }
+function linkFromTab(){ const v=parseInt(document.getElementById('comanda-input').value,10); if(v>0) linkComanda(String(v)); }
+
+function startScan(){
+  document.getElementById('overlay-scan').classList.add('show');
+  setTimeout(()=>{
+    document.getElementById('overlay-scan').classList.remove('show');
+    linkComanda(String(Math.floor(Math.random()*9000)+1000));
+  }, 1500);
+}
+
+function linkComanda(number){
+  comanda = { number, items: comanda ? comanda.items : [] };
+  closeLink();
+  buildBarcode(number);
+  if(pendingItem){ commitPending(); }
+  updateBadge(); renderComanda();
+  toast('Comanda #' + number + ' vinculada');
+}
+
+/* ================== COMANDA (render) ================== */
+function comandaSubtotal(){ return comanda ? comanda.items.reduce((s,i)=>s+i.unit*i.qty,0) : 0; }
+
+function renderComanda(){
+  const s1=document.getElementById('comanda-state1'), s2=document.getElementById('comanda-state2');
+  if(!comanda){ s1.style.display='block'; s2.style.display='none'; return; }
+  s1.style.display='none'; s2.style.display='block';
+  document.getElementById('comanda-num').textContent = '#'+comanda.number;
+
+  const wrap=document.getElementById('comanda-list'), empty=document.getElementById('comanda-empty');
+  if(!comanda.items.length){ wrap.innerHTML=''; empty.style.display='block'; }
+  else {
+    empty.style.display='none';
+    wrap.innerHTML = comanda.items.map((it,idx)=>{
+      const optTxt = it.opts.length ? it.opts.join(' · ') : 'Sem adicionais';
+      return `<div style="background:#fff; border:1px solid #f4ece4; border-radius:20px; padding:14px; display:flex; gap:14px; box-shadow: 0 4px 12px -8px rgba(67,20,7,.2);">
+        <div style="width:72px; height:72px; border-radius:14px; overflow:hidden; flex:0 0 auto; background:#f5e6d3; border: 1px solid #f0e6dd;"><img src="${it.img}" style="width:100%; height:100%; object-fit:cover;" onerror="imgFallback(this)"></div>
+        <div style="flex:1; min-width:0;">
+          <div style="display:flex; justify-content:space-between; gap:8px;">
+            <p style="font-weight:700; font-size:14.5px; color:#431407; line-height:1.2;">${it.name}</p>
+            <button onclick="removeItem(${idx})" style="border:none; background:none; padding:2px; flex:0 0 auto; transition: transform .15s ease;" onmousedown="this.style.transform='scale(0.9)'" onmouseup="this.style.transform='scale(1)'"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#cbb9a8" stroke-width="2.2" stroke-linecap="round"><path d="M3 6h18M8 6V4h8v2M19 6l-1 14a2 2 0 0 1-2 2H8a2 2 0 0 1-2-2L5 6"/></svg></button>
+          </div>
+          <p style="font-size:12px; font-weight:500; color:#a8a29e; margin-top:4px; line-height:1.35; display:-webkit-box; -webkit-line-clamp:2; -webkit-box-orient:vertical; overflow:hidden;">${optTxt}</p>
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-top:10px;">
+            <div style="display:flex; align-items:center; gap:2px; background:#FAFAF9; border:2px solid #f0e6dd; border-radius:12px; padding:3px;">
+              <button onclick="changeQty(${idx},-1)" style="width:28px; height:28px; border:none; background:#fff; border-radius:8px; display:flex; align-items:center; justify-content:center; box-shadow: 0 1px 3px rgba(0,0,0,.05);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#7C2D12" stroke-width="2.8" stroke-linecap="round"><path d="M5 12h14"/></svg></button>
+              <span style="width:24px; text-align:center; font-weight:800; font-size:14px; color:#431407;">${it.qty}</span>
+              <button onclick="changeQty(${idx},1)" style="width:28px; height:28px; border:none; background:#fff; border-radius:8px; display:flex; align-items:center; justify-content:center; box-shadow: 0 1px 3px rgba(0,0,0,.05);"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#EA580C" stroke-width="2.8" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+            </div>
+            <span style="font-family:'Fraunces',serif; font-weight:700; font-size:16px; color:#431407;">${brl(it.unit*it.qty)}</span>
+          </div>
+        </div>
+      </div>`;
+    }).join('');
+  }
+  document.getElementById('comanda-subtotal').textContent = brl(comandaSubtotal());
+}
+function changeQty(idx,d){ comanda.items[idx].qty+=d; if(comanda.items[idx].qty<=0) comanda.items.splice(idx,1); updateBadge(); renderComanda(); }
+function removeItem(idx){ comanda.items.splice(idx,1); updateBadge(); renderComanda(); }
+
+function buildBarcode(number){
+  const bc=document.getElementById('barcode'); let seed=0; for(const ch of number) seed+=ch.charCodeAt(0);
+  let html='';
+  for(let i=0;i<48;i++){ seed=(seed*9301+49297)%233280; const w=1+(seed% 4); const dark=(seed%3!==0); html+=`<i style="width:${w}px; background:${dark?'#1c1917':'transparent'};"></i>`; }
+  bc.innerHTML=html;
+  document.getElementById('barcode-num').textContent = '7890 '+number.padStart(4,'0')+' 0012';
+}
+
+/* ================== NAV & STATUS BAR ================== */
+function switchTab(tab){
+  ['cardapio','comanda','perfil'].forEach(t=>{
+    document.getElementById('screen-'+t).classList.toggle('active', t===tab);
+    document.getElementById('tab-'+t).classList.toggle('on', t===tab);
+  });
+  if(tab==='cardapio'){ document.getElementById('status-bar').style.color = '#fff'; } else { document.getElementById('status-bar').style.color = '#431407'; }
+  if(tab==='comanda') renderComanda();
+  if(tab==='perfil') renderPerfil();
+}
+function updateBadge(){
+  const n = comanda ? comanda.items.reduce((s,i)=>s+i.qty,0) : 0;
+  const b=document.getElementById('nav-badge');
+  if(n>0){ b.style.display='flex'; b.textContent=n; } else b.style.display='none';
+}
+
+/* ================== PERFIL / CRM ================== */
+function renderPerfil(){
+  document.getElementById('pts-big').textContent = customer.points;
+  document.getElementById('greet-name').textContent = firstName();
+  
+  const target=200;
+  const pct=Math.min(100, Math.round(customer.points/target*100));
+  document.getElementById('pts-bar').style.width = pct+'%';
+  const falta=Math.max(0, target-customer.points);
+  document.getElementById('pts-next').textContent = falta>0 ? `Faltam ${falta} pts para o próximo prêmio` : 'Você já pode resgatar o prêmio máximo!';
+  const btn=document.getElementById('btn-redeem');
+  if(customer.points>=100){ btn.disabled=false; btn.style.opacity='1'; btn.textContent='Resgatar Café Expresso (100 pts)'; }
+  else { btn.disabled=true; btn.style.opacity='.55'; btn.textContent='Pontos insuficientes para resgate'; }
+
+  document.getElementById('history').innerHTML = HISTORY.map(h=>`
+    <div style="background:#fff; border:1px solid #f4ece4; border-radius:20px; padding:16px; display:flex; align-items:center; justify-content:space-between; box-shadow: 0 4px 10px -8px rgba(0,0,0,.1);">
+      <div style="display:flex; align-items:center; gap:14px;">
+        <div style="width:44px; height:44px; border-radius:14px; background:#FFF7ED; display:flex; align-items:center; justify-content:center;"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#EA580C" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3h14v18l-2.5-1.6L14 21l-2-1.6L10 21l-2.5-1.6L5 21z"/><path d="M9 8h6M9 12h6"/></svg></div>
+        <div><p style="font-weight:800; font-size:15px; color:#431407;">Comanda ${h.n}</p><p style="font-size:12px; font-weight:600; color:#a8a29e; margin-top:3px;">${h.date} · ${h.items} itens</p></div>
+      </div>
+      <span style="font-family:'Fraunces',serif; font-weight:700; font-size:16px; color:#431407;">${brl(h.val)}</span>
+    </div>`).join('');
+}
+
+function redeem(){
+  if(customer.points<100) return;
+  customer.points-=100;
+  renderPerfil();
+  toast('Café expresso liberado! Retire no balcão.');
+}
+function syncName(){
+  customer.name = document.getElementById('f-name').value || 'Cliente';
+  document.getElementById('greet-name').textContent = firstName();
+}
+function saveProfile(){
+  customer.whatsapp = document.getElementById('f-whats').value;
+  customer.cpf = document.getElementById('f-cpf').value;
+  customer.email = document.getElementById('f-email').value;
+  syncName();
+  toast('Cadastro atualizado com sucesso');
+}
+
+function tick(){ const d=new Date(); document.getElementById('clock').textContent = d.getHours().toString().padStart(2,'0')+':'+d.getMinutes().toString().padStart(2,'0'); }
+
+/* ================== INIT ================== */
+renderCats(); renderMenu(); updateBadge();
+document.getElementById('greet-name').textContent = firstName();
+tick(); setInterval(tick,15000);
+</script>
+</body>
+</html>
